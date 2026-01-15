@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
+import { ColorSort } from '../components/ColorSort';
 
 export default function Game() {
   const navigate = useNavigate();
@@ -34,11 +35,11 @@ export default function Game() {
     }
   };
 
-  const handleGameAction = () => {
-    const points = Math.floor(Math.random() * 100) + currentScore;
-    const level = Math.floor(points / 500) + 1;
+  const onScore = (points: number) => {
+    const newScore = currentScore + points;
+    const level = Math.floor(newScore / 500) + 1;
 
-    updateScore(points);
+    updateScore(newScore);
     if (level > currentLevel) {
       updateLevel(level);
     }
@@ -159,15 +160,15 @@ export default function Game() {
       </div>
 
       <div className="game-area">
-        <h3>Game in Progress</h3>
-        <p>Click the button below to earn points!</p>
-        <button className="btn btn-action" onClick={handleGameAction}>
-          Score Points! 🎯
-        </button>
+        <ColorSort 
+          onScore={onScore} 
+          onLevelComplete={() => {}} 
+          difficulty={difficulty} 
+        />
       </div>
 
-      <button className="btn btn-danger" onClick={handleEndGame}>
-        End Game
+      <button className="btn btn-danger" onClick={handleEndGame} style={{ marginTop: '20px' }}>
+        End Game & Submit Score
       </button>
     </div>
   );
