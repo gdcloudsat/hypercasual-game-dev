@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabasePool } from '../database/database.config';
-import { SubmitScoreDto, Difficulty } from './dto/game.dto';
+import { SubmitScoreDto, Difficulty, GameType } from './dto/game.dto';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class GameService {
   private readonly LEVEL_XP_BASE = 1000;
   private readonly MAX_LEVEL = 50;
 
-  async startSession(userId: number, difficulty: Difficulty) {
+  async startSession(userId: number, difficulty: Difficulty, gameType: GameType = GameType.COLOR_SORT) {
     const pool = getDatabasePool();
     const sessionToken = uuidv4();
 
@@ -27,29 +27,30 @@ export class GameService {
     );
 
     const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO game_sessions (user_id, session_token, is_active) VALUES (?, ?, TRUE)',
-      [userId, sessionToken]
+      'INSERT INTO game_sessions (user_id, session_token, game_type, is_active) VALUES (?, ?, ?, TRUE)',
+      [userId, sessionToken, gameType]
     );
 
     await pool.query(
       'INSERT INTO user_activity_logs (user_id, action, metadata) VALUES (?, ?, ?)',
-      [userId, 'game_start', JSON.stringify({ difficulty, sessionId: result.insertId })]
+      [userId, 'game_start', JSON.stringify({ difficulty, gameType, sessionId: result.insertId })]
     );
 
     return {
       sessionId: result.insertId,
       sessionToken,
       difficulty,
+      gameType,
       multiplier: this.DIFFICULTY_MULTIPLIERS[difficulty],
     };
   }
 
   async submitScore(userId: number, submitScoreDto: SubmitScoreDto) {
     const pool = getDatabasePool();
-    const { points, level, difficulty, sessionToken } = submitScoreDto;
+    const { points, level, difficulty, sessionToken, gameType = GameType.COLOR_SORT } = submitScoreDto;
 
     const [sessions] = await pool.query<RowDataPacket[]>(
-      'SELECT id, started_at FROM game_sessions WHERE session_token = ? AND user_id = ? AND is_active = TRUE',
+      'SELECT id, started_at, game_type FROM game_sessions WHERE session_token = ? AND user_id = ? AND is_active = TRUE',
       [sessionToken, userId]
     );
 
@@ -74,8 +75,8 @@ export class GameService {
     const earnedXP = Math.floor(finalPoints * this.XP_PER_POINT);
 
     await pool.query<ResultSetHeader>(
-      'INSERT INTO game_scores (user_id, points, level, difficulty, session_id) VALUES (?, ?, ?, ?, ?)',
-      [userId, finalPoints, level, difficulty, session.id]
+      'INSERT INTO game_scores (user_id, points, level, difficulty, game_type, session_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, finalPoints, level, difficulty, gameType, session.id]
     );
 
     await pool.query(
@@ -89,7 +90,7 @@ export class GameService {
 
     await pool.query(
       'INSERT INTO user_activity_logs (user_id, action, metadata) VALUES (?, ?, ?)',
-      [userId, 'game_complete', JSON.stringify({ points: finalPoints, level, difficulty, xp: earnedXP })]
+      [userId, 'game_complete', JSON.stringify({ points: finalPoints, level, difficulty, gameType, xp: earnedXP })]
     );
 
     return {
@@ -97,6 +98,7 @@ export class GameService {
       earnedXP,
       multiplier,
       levelProgress,
+      gameType,
     };
   }
 

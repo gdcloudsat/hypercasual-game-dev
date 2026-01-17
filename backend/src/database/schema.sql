@@ -26,12 +26,14 @@ CREATE TABLE IF NOT EXISTS game_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     session_token VARCHAR(255) NOT NULL UNIQUE,
+    game_type ENUM('color_sort', 'bubble_shooter', 'rolling_ball') DEFAULT 'color_sort',
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ended_at TIMESTAMP NULL,
     is_active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_session_token (session_token),
+    INDEX idx_game_type (game_type),
     INDEX idx_started_at (started_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS game_scores (
     points INT NOT NULL DEFAULT 0,
     level INT NOT NULL DEFAULT 1,
     difficulty ENUM('easy', 'medium', 'hard', 'expert') DEFAULT 'easy',
+    game_type ENUM('color_sort', 'bubble_shooter', 'rolling_ball') DEFAULT 'color_sort',
     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     session_id INT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -49,6 +52,7 @@ CREATE TABLE IF NOT EXISTS game_scores (
     INDEX idx_user_id (user_id),
     INDEX idx_points (points),
     INDEX idx_level (level),
+    INDEX idx_game_type (game_type),
     INDEX idx_completed_at (completed_at),
     INDEX idx_user_points (user_id, points)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -146,6 +150,33 @@ CREATE TABLE IF NOT EXISTS user_achievements (
     UNIQUE KEY unique_user_achievement (user_id, achievement_id),
     INDEX idx_user_id (user_id),
     INDEX idx_unlocked_at (unlocked_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ad rewards table
+CREATE TABLE IF NOT EXISTS ad_rewards (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    reward_type ENUM('coins', 'xp', 'points') NOT NULL,
+    amount INT NOT NULL DEFAULT 0,
+    ad_shown BOOLEAN DEFAULT TRUE,
+    watched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_reward_type (reward_type),
+    INDEX idx_watched_at (watched_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- User ad stats table
+CREATE TABLE IF NOT EXISTS user_ad_stats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    total_ads_watched INT NOT NULL DEFAULT 0,
+    total_ads_skipped INT NOT NULL DEFAULT 0,
+    total_coins_from_ads INT NOT NULL DEFAULT 0,
+    total_xp_from_ads INT NOT NULL DEFAULT 0,
+    last_ad_watched_at TIMESTAMP NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default achievements

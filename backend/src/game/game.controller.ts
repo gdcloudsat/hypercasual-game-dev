@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, UseGuards, Request, Query } from '@nestjs/
 import { GameService } from './game.service';
 import { SubmitScoreDto, StartSessionDto } from './dto/game.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { GameType } from './dto/game.dto';
 
 @Controller('game')
 @UseGuards(JwtAuthGuard)
@@ -10,7 +11,11 @@ export class GameController {
 
   @Post('start-session')
   async startSession(@Request() req, @Body() startSessionDto: StartSessionDto) {
-    return this.gameService.startSession(req.user.userId, startSessionDto.difficulty);
+    return this.gameService.startSession(
+      req.user.userId,
+      startSessionDto.difficulty,
+      startSessionDto.gameType || GameType.COLOR_SORT
+    );
   }
 
   @Post('submit-score')

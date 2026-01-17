@@ -1,10 +1,16 @@
-import { IsInt, IsString, IsEnum, Min, Max } from 'class-validator';
+import { IsInt, IsString, IsEnum, Min, Max, IsOptional } from 'class-validator';
 
 export enum Difficulty {
   EASY = 'easy',
   MEDIUM = 'medium',
   HARD = 'hard',
   EXPERT = 'expert',
+}
+
+export enum GameType {
+  COLOR_SORT = 'color_sort',
+  BUBBLE_SHOOTER = 'bubble_shooter',
+  ROLLING_BALL = 'rolling_ball',
 }
 
 export class SubmitScoreDto {
@@ -22,9 +28,17 @@ export class SubmitScoreDto {
 
   @IsString()
   sessionToken: string;
+
+  @IsEnum(GameType)
+  @IsOptional()
+  gameType?: GameType;
 }
 
 export class StartSessionDto {
   @IsEnum(Difficulty)
   difficulty: Difficulty;
+
+  @IsEnum(GameType)
+  @IsOptional()
+  gameType?: GameType;
 }

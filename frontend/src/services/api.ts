@@ -51,4 +51,26 @@ api.interceptors.response.use(
   }
 );
 
+export const adsApi = {
+  watchAd: async () => {
+    const response = await api.post('/ads/watch');
+    return response.data;
+  },
+
+  skipAd: async () => {
+    const response = await api.post('/ads/skip');
+    return response.data;
+  },
+
+  getAdRewards: async () => {
+    const response = await api.get('/ads/rewards');
+    return response.data;
+  },
+
+  getAdStats: async () => {
+    const response = await api.get('/ads/stats');
+    return response.data;
+  },
+};
+
 export default api;
