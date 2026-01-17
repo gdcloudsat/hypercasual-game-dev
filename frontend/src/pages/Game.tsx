@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { ColorSort } from '../components/ColorSort';
+import { BubbleShooter } from '../components/BubbleShooter';
+import { RollingBall } from '../components/RollingBall';
+import { AdModal } from '../components/AdModal';
+import { adsApi } from '../services/api';
 
 export default function Game() {
   const navigate = useNavigate();
@@ -10,6 +14,7 @@ export default function Game() {
     currentScore,
     currentLevel,
     difficulty,
+    gameType,
     startSession,
     submitScore,
     updateScore,
@@ -18,7 +23,9 @@ export default function Game() {
   } = useGameStore();
 
   const [selectedDifficulty, setSelectedDifficulty] = useState('easy');
+  const [selectedGameType, setSelectedGameType] = useState('color_sort');
   const [showResult, setShowResult] = useState(false);
+  const [showAd, setShowAd] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   useEffect(() => {
@@ -29,7 +36,7 @@ export default function Game() {
 
   const handleStartGame = async () => {
     try {
-      await startSession(selectedDifficulty);
+      await startSession(selectedDifficulty, selectedGameType);
     } catch (error) {
       console.error('Failed to start game:', error);
     }
@@ -45,9 +52,13 @@ export default function Game() {
     }
   };
 
+  const onLevelComplete = async () => {
+    setShowAd(true);
+  };
+
   const handleEndGame = async () => {
     try {
-      const res = await submitScore(currentScore, currentLevel);
+      const res = await submitScore(currentScore, currentLevel, gameType);
       setResult(res);
       setShowResult(true);
     } catch (error) {
@@ -60,6 +71,43 @@ export default function Game() {
     setResult(null);
     resetGame();
   };
+
+  const handleWatchAd = async () => {
+    try {
+      await adsApi.watchAd();
+    } catch (error) {
+      console.error('Failed to record ad:', error);
+    }
+  };
+
+  const handleSkipAd = async () => {
+    try {
+      await adsApi.skipAd();
+      setShowAd(false);
+    } catch (error) {
+      console.error('Failed to skip ad:', error);
+    }
+  };
+
+  const handleAdClose = () => {
+    setShowAd(false);
+    if (result) {
+      setShowResult(true);
+    }
+  };
+
+  if (showAd) {
+    return (
+      <div className="game-container">
+        <AdModal
+          show={showAd}
+          onClose={handleAdClose}
+          onWatchComplete={handleWatchAd}
+          onSkip={handleSkipAd}
+        />
+      </div>
+    );
+  }
 
   if (showResult && result) {
     return (
@@ -113,8 +161,40 @@ export default function Game() {
     return (
       <div className="game-container">
         <div className="game-menu">
-          <h2>Select Difficulty</h2>
+          <h2>Select Game & Difficulty</h2>
+
+          <div className="game-selector">
+            <h3>Choose Your Game</h3>
+            <div className="game-cards">
+              <div
+                className={`game-card ${selectedGameType === 'color_sort' ? 'active' : ''}`}
+                onClick={() => setSelectedGameType('color_sort')}
+              >
+                <div className="game-card-icon">🎨</div>
+                <h4>Color Sort</h4>
+                <p>Sort colored water tubes to complete levels!</p>
+              </div>
+              <div
+                className={`game-card ${selectedGameType === 'bubble_shooter' ? 'active' : ''}`}
+                onClick={() => setSelectedGameType('bubble_shooter')}
+              >
+                <div className="game-card-icon">🫧</div>
+                <h4>Bubble Shooter</h4>
+                <p>Shoot and match 3+ bubbles to pop them!</p>
+              </div>
+              <div
+                className={`game-card ${selectedGameType === 'rolling_ball' ? 'active' : ''}`}
+                onClick={() => setSelectedGameType('rolling_ball')}
+              >
+                <div className="game-card-icon">🎱</div>
+                <h4>Rolling Ball</h4>
+                <p>Navigate the ball and collect coins!</p>
+              </div>
+            </div>
+          </div>
+
           <div className="difficulty-selector">
+            <h3>Select Difficulty</h3>
             {['easy', 'medium', 'hard', 'expert'].map((diff) => (
               <button
                 key={diff}
@@ -160,11 +240,15 @@ export default function Game() {
       </div>
 
       <div className="game-area">
-        <ColorSort 
-          onScore={onScore} 
-          onLevelComplete={() => {}} 
-          difficulty={difficulty} 
-        />
+        {gameType === 'bubble_shooter' && (
+          <BubbleShooter onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} />
+        )}
+        {gameType === 'rolling_ball' && (
+          <RollingBall onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} />
+        )}
+        {gameType === 'color_sort' && (
+          <ColorSort onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} />
+        )}
       </div>
 
       <button className="btn btn-danger" onClick={handleEndGame} style={{ marginTop: '20px' }}>

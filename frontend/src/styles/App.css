@@ -67,20 +67,33 @@
 
 /* Home Page */
 .home-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
   padding: 20px;
+}
+
+.hero-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
 }
 
 .home-content {
   text-align: center;
-  background: white;
   padding: 60px 40px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 600px;
+}
+
+.hero-section .home-content {
+  padding: 40px 20px;
+  max-width: 1200px;
+  width: 100%;
 }
 
 .game-title {
@@ -95,6 +108,10 @@
   margin-bottom: 40px;
 }
 
+.hero-section .game-subtitle {
+  color: white;
+}
+
 .home-actions {
   display: flex;
   flex-direction: column;
@@ -103,6 +120,15 @@
 
 .home-actions h2 {
   margin-bottom: 20px;
+}
+
+.welcome-message {
+  margin-bottom: 20px;
+}
+
+.welcome-message h2 {
+  font-size: 2rem;
+  color: white;
 }
 
 /* Auth Pages */

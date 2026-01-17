@@ -10,6 +10,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { AdsModule } from './ads/ads.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     UsersModule,
     AdminModule,
     WebsocketModule,
+    AdsModule,
   ],
   providers: [
     {
