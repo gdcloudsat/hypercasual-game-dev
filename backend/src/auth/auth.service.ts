@@ -55,6 +55,7 @@ export class AuthService {
         username,
         email,
         isGuest: false,
+        isAdmin: false,
       },
       ...tokens,
     };
@@ -99,7 +100,7 @@ export class AuthService {
       [user.id, 'login']
     );
 
-    const tokens = await this.generateTokens(user.id, user.username, false, user.is_admin);
+    const tokens = await this.generateTokens(user.id, user.username, false, !!user.is_admin);
 
     return {
       user: {
@@ -107,7 +108,7 @@ export class AuthService {
         username: user.username,
         email: user.email,
         isGuest: false,
-        isAdmin: user.is_admin,
+        isAdmin: !!user.is_admin,
       },
       ...tokens,
     };
@@ -147,6 +148,7 @@ export class AuthService {
         id: userId,
         username: guestUsername,
         isGuest: true,
+        isAdmin: false,
       },
       ...tokens,
     };
@@ -194,6 +196,7 @@ export class AuthService {
         username,
         email,
         isGuest: false,
+        isAdmin: false,
       },
       ...tokens,
     };

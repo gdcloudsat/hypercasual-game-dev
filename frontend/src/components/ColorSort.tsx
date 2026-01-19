@@ -5,6 +5,7 @@ interface ColorSortProps {
   onScore: (points: number) => void;
   onLevelComplete: () => void;
   difficulty: string;
+  level: number;
 }
 
 const COLORS = [
@@ -20,16 +21,20 @@ const COLORS = [
 
 const TUBE_CAPACITY = 4;
 
-export const ColorSort: React.FC<ColorSortProps> = ({ onScore, onLevelComplete, difficulty }) => {
+export const ColorSort: React.FC<ColorSortProps> = ({ onScore, onLevelComplete, difficulty, level }) => {
   const [tubes, setTubes] = useState<string[][]>([]);
   const [selectedTubeIndex, setSelectedTubeIndex] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
 
   const initGame = useCallback(() => {
     let colorCount = 3;
-    if (difficulty === 'medium') colorCount = 5;
-    if (difficulty === 'hard') colorCount = 7;
+    if (difficulty === 'medium') colorCount = 4;
+    if (difficulty === 'hard') colorCount = 6;
     if (difficulty === 'expert') colorCount = 8;
+
+    // Adjust based on level
+    const levelBonus = Math.floor((level - 1) / 5);
+    colorCount = Math.min(COLORS.length, colorCount + levelBonus);
 
     const gameColors = COLORS.slice(0, colorCount);
     const allBalls: string[] = [];

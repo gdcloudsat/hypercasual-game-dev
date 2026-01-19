@@ -130,6 +130,44 @@ export default function Profile() {
           </button>
         </div>
 
+        {stats?.gameLevels && stats.gameLevels.length > 0 && (
+          <div className="game-levels-section">
+            <h3>Game Progress</h3>
+            <div className="game-levels-grid">
+              {stats.gameLevels.map((gl: any, index: number) => (
+                <div key={index} className="game-level-card">
+                  <h4>{gl.game_type.replace('_', ' ').toUpperCase()}</h4>
+                  <div className="gl-stat">Level: {gl.current_level}</div>
+                  <div className="gl-stat">XP: {gl.total_xp}</div>
+                  <div className="gl-stat">Stars: ⭐ {gl.stars_earned}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {stats?.gameHistory && stats.gameHistory.length > 0 && (
+          <div className="history-section">
+            <h3>Points History by Game</h3>
+            <div className="history-table">
+              <div className="table-header">
+                <div>Game</div>
+                <div>Played</div>
+                <div>High Score</div>
+                <div>Total Points</div>
+              </div>
+              {stats.gameHistory.map((gh: any, index: number) => (
+                <div key={index} className="table-row">
+                  <div>{gh.game_type.replace('_', ' ').toUpperCase()}</div>
+                  <div>{gh.games_played}</div>
+                  <div>{gh.high_score}</div>
+                  <div>{gh.total_points}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {stats?.achievements && stats.achievements.length > 0 && (
           <div className="achievements-section">
             <h3>Achievements ({stats.achievements.length})</h3>

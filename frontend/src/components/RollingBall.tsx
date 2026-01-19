@@ -4,6 +4,7 @@ interface RollingBallProps {
   onScore: (points: number) => void;
   onLevelComplete: () => void;
   difficulty: string;
+  level: number;
 }
 
 interface Ball {
@@ -34,7 +35,7 @@ interface Coin {
   collected: boolean;
 }
 
-export function RollingBall({ onScore, onLevelComplete, difficulty }: RollingBallProps) {
+export function RollingBall({ onScore, onLevelComplete, difficulty, level }: RollingBallProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ball, setBall] = useState<Ball>({
     x: 100,
@@ -56,18 +57,27 @@ export function RollingBall({ onScore, onLevelComplete, difficulty }: RollingBal
   const jumpForce = -15;
 
   const getLevelConfig = () => {
-    switch (difficulty) {
-      case 'easy':
-        return { platformCount: 8, coinCount: 5, movingPlatforms: 0 };
-      case 'medium':
-        return { platformCount: 12, coinCount: 10, movingPlatforms: 2 };
-      case 'hard':
-        return { platformCount: 16, coinCount: 15, movingPlatforms: 4 };
-      case 'expert':
-        return { platformCount: 20, coinCount: 20, movingPlatforms: 6 };
-      default:
-        return { platformCount: 8, coinCount: 5, movingPlatforms: 0 };
-    }
+    const baseConfig = (() => {
+      switch (difficulty) {
+        case 'easy':
+          return { platformCount: 8, coinCount: 5, movingPlatforms: 0 };
+        case 'medium':
+          return { platformCount: 12, coinCount: 10, movingPlatforms: 2 };
+        case 'hard':
+          return { platformCount: 16, coinCount: 15, movingPlatforms: 4 };
+        case 'expert':
+          return { platformCount: 20, coinCount: 20, movingPlatforms: 6 };
+        default:
+          return { platformCount: 8, coinCount: 5, movingPlatforms: 0 };
+      }
+    })();
+
+    const levelBonus = Math.floor((level - 1) / 3);
+    return {
+      platformCount: baseConfig.platformCount + levelBonus,
+      coinCount: baseConfig.coinCount + levelBonus,
+      movingPlatforms: baseConfig.movingPlatforms + Math.floor(levelBonus / 2),
+    };
   };
 
   const generateLevel = useCallback(() => {

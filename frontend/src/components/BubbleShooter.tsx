@@ -4,6 +4,7 @@ interface BubbleShooterProps {
   onScore: (points: number) => void;
   onLevelComplete: () => void;
   difficulty: string;
+  level: number;
 }
 
 interface Bubble {
@@ -15,7 +16,7 @@ interface Bubble {
   col: number;
 }
 
-export function BubbleShooter({ onScore, onLevelComplete, difficulty }: BubbleShooterProps) {
+export function BubbleShooter({ onScore, onLevelComplete, difficulty, level }: BubbleShooterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
@@ -27,13 +28,9 @@ export function BubbleShooter({ onScore, onLevelComplete, difficulty }: BubbleSh
   const bubbleRadius = 20;
 
   const getRowCount = () => {
-    switch (difficulty) {
-      case 'easy': return 5;
-      case 'medium': return 7;
-      case 'hard': return 10;
-      case 'expert': return 12;
-      default: return 5;
-    }
+    const baseRows = difficulty === 'easy' ? 4 : difficulty === 'medium' ? 6 : difficulty === 'hard' ? 8 : 10;
+    const levelBonus = Math.floor((level - 1) / 2);
+    return Math.min(15, baseRows + levelBonus);
   };
 
   const getColCount = () => {

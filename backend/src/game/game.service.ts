@@ -36,12 +36,18 @@ export class GameService {
       [userId, 'game_start', JSON.stringify({ difficulty, gameType, sessionId: result.insertId })]
     );
 
+    const [gameLevel] = await pool.query<RowDataPacket[]>(
+      'SELECT current_level FROM user_game_levels WHERE user_id = ? AND game_type = ?',
+      [userId, gameType]
+    );
+
     return {
       sessionId: result.insertId,
       sessionToken,
       difficulty,
       gameType,
       multiplier: this.DIFFICULTY_MULTIPLIERS[difficulty],
+      startLevel: gameLevel[0]?.current_level || 1,
     };
   }
 
@@ -65,11 +71,6 @@ export class GameService {
       throw new BadRequestException('Session too short - possible cheating detected');
     }
 
-    const maxPointsForLevel = level * 1000;
-    if (points > maxPointsForLevel) {
-      throw new BadRequestException('Score too high for level - validation failed');
-    }
-
     const multiplier = this.DIFFICULTY_MULTIPLIERS[difficulty];
     const finalPoints = Math.floor(points * multiplier);
     const earnedXP = Math.floor(finalPoints * this.XP_PER_POINT);
@@ -84,7 +85,7 @@ export class GameService {
       [session.id]
     );
 
-    const levelProgress = await this.updateUserLevel(userId, earnedXP);
+    const levelProgress = await this.updateUserLevel(userId, earnedXP, gameType);
 
     await this.checkAndUnlockAchievements(userId, finalPoints, level);
 
@@ -125,6 +126,19 @@ export class GameService {
       [userId]
     );
 
+    const [gameLevels] = await pool.query<RowDataPacket[]>(
+      'SELECT game_type, current_level, stars_earned, total_xp FROM user_game_levels WHERE user_id = ?',
+      [userId]
+    );
+
+    const [gameHistory] = await pool.query<RowDataPacket[]>(
+      `SELECT game_type, SUM(points) as total_points, COUNT(*) as games_played, MAX(points) as high_score
+       FROM game_scores
+       WHERE user_id = ?
+       GROUP BY game_type`,
+      [userId]
+    );
+
     const [achievements] = await pool.query<RowDataPacket[]>(
       `SELECT a.name, a.description, ua.unlocked_at 
        FROM user_achievements ua 
@@ -147,6 +161,8 @@ export class GameService {
       totalGames: totalGames[0]?.count || 0,
       highScore: highScore[0]?.score || 0,
       totalPoints: totalPoints[0]?.total || 0,
+      gameLevels: gameLevels || [],
+      gameHistory: gameHistory || [],
       achievements: achievements || [],
     };
   }
@@ -155,7 +171,7 @@ export class GameService {
     const pool = getDatabasePool();
 
     const [games] = await pool.query<RowDataPacket[]>(
-      `SELECT id, points, level, difficulty, completed_at 
+      `SELECT id, points, level, difficulty, game_type, completed_at 
        FROM game_scores 
        WHERE user_id = ? 
        ORDER BY completed_at DESC 
@@ -166,9 +182,10 @@ export class GameService {
     return games;
   }
 
-  private async updateUserLevel(userId: number, earnedXP: number) {
+  private async updateUserLevel(userId: number, earnedXP: number, gameType: GameType = GameType.COLOR_SORT) {
     const pool = getDatabasePool();
 
+    // 1. Update Global Level
     const [currentLevel] = await pool.query<RowDataPacket[]>(
       'SELECT current_level, total_xp FROM user_levels WHERE user_id = ?',
       [userId]
@@ -190,10 +207,53 @@ export class GameService {
       [newLevel, newTotalXP, starsEarned, userId]
     );
 
+    // 2. Update Game Specific Level
+    const [currentGameLevel] = await pool.query<RowDataPacket[]>(
+      'SELECT current_level, total_xp FROM user_game_levels WHERE user_id = ? AND game_type = ?',
+      [userId, gameType]
+    );
+
+    let gameNewLevel: number;
+    let gameNewTotalXP: number;
+    let gameLevelsGained: number;
+    let gameStarsEarned: number;
+
+    if (currentGameLevel.length === 0) {
+      // Initialize game level if it doesn't exist
+      gameNewLevel = 1;
+      gameNewTotalXP = earnedXP;
+      while (gameNewLevel < this.MAX_LEVEL && gameNewTotalXP >= this.calculateXPForLevel(gameNewLevel + 1)) {
+        gameNewLevel++;
+      }
+      gameLevelsGained = gameNewLevel - 0; // Starting from level 0 essentially
+      gameStarsEarned = gameNewLevel * 3;
+      
+      await pool.query(
+        'INSERT INTO user_game_levels (user_id, game_type, current_level, total_xp, stars_earned) VALUES (?, ?, ?, ?, ?)',
+        [userId, gameType, gameNewLevel, gameNewTotalXP, gameStarsEarned]
+      );
+    } else {
+      const gameCurrent = currentGameLevel[0];
+      gameNewTotalXP = gameCurrent.total_xp + earnedXP;
+      gameNewLevel = gameCurrent.current_level;
+
+      while (gameNewLevel < this.MAX_LEVEL && gameNewTotalXP >= this.calculateXPForLevel(gameNewLevel + 1)) {
+        gameNewLevel++;
+      }
+
+      gameLevelsGained = gameNewLevel - gameCurrent.current_level;
+      gameStarsEarned = gameLevelsGained * 3;
+
+      await pool.query(
+        'UPDATE user_game_levels SET current_level = ?, total_xp = ?, stars_earned = stars_earned + ? WHERE user_id = ? AND game_type = ?',
+        [gameNewLevel, gameNewTotalXP, gameStarsEarned, userId, gameType]
+      );
+    }
+
     if (levelsGained > 0) {
       await pool.query(
         'INSERT INTO rewards (user_id, reward_type, amount, metadata) VALUES (?, ?, ?, ?)',
-        [userId, 'xp', earnedXP, JSON.stringify({ levelsGained, newLevel })]
+        [userId, 'xp', earnedXP, JSON.stringify({ levelsGained, newLevel, gameType })]
       );
     }
 
@@ -201,13 +261,26 @@ export class GameService {
     const xpForCurrentLevel = this.calculateXPForLevel(newLevel);
     const progress = ((newTotalXP - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)) * 100;
 
+    // Return game-specific level progress as primary, but include global
+    const gameXpForNextLevel = this.calculateXPForLevel(gameNewLevel + 1);
+    const gameXpForCurrentLevel = this.calculateXPForLevel(gameNewLevel);
+    const gameProgress = ((gameNewTotalXP - gameXpForCurrentLevel) / (gameXpForNextLevel - gameXpForCurrentLevel)) * 100;
+
     return {
-      currentLevel: newLevel,
-      totalXP: newTotalXP,
-      levelsGained,
-      starsEarned,
-      xpForNextLevel,
-      progress: Math.min(100, progress),
+      currentLevel: gameNewLevel,
+      totalXP: gameNewTotalXP,
+      levelsGained: gameLevelsGained,
+      starsEarned: gameStarsEarned,
+      xpForNextLevel: gameXpForNextLevel,
+      progress: Math.min(100, gameProgress),
+      global: {
+        currentLevel: newLevel,
+        totalXP: newTotalXP,
+        levelsGained,
+        starsEarned,
+        xpForNextLevel,
+        progress: Math.min(100, progress),
+      }
     };
   }
 
