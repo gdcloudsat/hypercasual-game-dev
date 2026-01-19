@@ -228,8 +228,10 @@ export function RollingBall({ onScore, onLevelComplete, difficulty, level }: Rol
           newBall.y = platform.y - newBall.radius;
           newBall.vy = 0;
 
-          if (platform.isMoving && platform.moveRange && platform.moveSpeed) {
-            newBall.x += platform.moveDirection * platform.moveSpeed;
+                    if (platform.isMoving) {
+            const direction = platform.moveDirection ?? 0;
+            const speed = platform.moveSpeed ?? 0;
+            newBall.x += direction * speed;
           }
         }
       });
@@ -269,12 +271,20 @@ export function RollingBall({ onScore, onLevelComplete, difficulty, level }: Rol
       }
 
       const newPlatform = { ...platform };
-      newPlatform.x += newPlatform.moveDirection * newPlatform.moveSpeed;
+        if (
+          newPlatform.moveDirection !== undefined &&
+          newPlatform.moveSpeed !== undefined &&
+          platform.moveRange !== undefined
+        ) {
+          newPlatform.x += newPlatform.moveDirection * newPlatform.moveSpeed;
 
-      if (newPlatform.x <= platform.moveRange[0] || newPlatform.x + platform.width >= platform.moveRange[1]) {
-        newPlatform.moveDirection *= -1;
-      }
-
+          if (
+            newPlatform.x <= platform.moveRange[0] ||
+            newPlatform.x + platform.width >= platform.moveRange[1]
+          ) {
+            newPlatform.moveDirection *= -1;
+          }
+        }
       return newPlatform;
     }));
   }, [keys, platforms, coins, collectedCoins, gameState, onScore, onLevelComplete]);
