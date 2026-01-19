@@ -9,6 +9,7 @@ import Game from './pages/Game';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
 import './styles/App.css';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -28,7 +29,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <div className="loading">Loading...</div>;
   }
 
-  return isAuthenticated && user?.isAdmin ? <>{children}</> : <Navigate to="/" />;
+  return isAuthenticated && user?.isAdmin ? <>{children}</> : <AdminLogin />;
 }
 
 function App() {
