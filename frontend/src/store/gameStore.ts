@@ -27,14 +27,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   startSession: async (difficulty: string, gameType: string = 'color_sort') => {
     try {
       const response = await api.post('/game/start-session', { difficulty, gameType });
-      const { sessionToken } = response.data;
+      const { sessionToken, startLevel } = response.data;
 
       set({
         sessionToken,
         difficulty,
         gameType,
         currentScore: 0,
-        currentLevel: 1,
+        currentLevel: startLevel || 1,
         isPlaying: true,
       });
     } catch (error) {
