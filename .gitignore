@@ -16,6 +16,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
 
 # Logs
 logs
@@ -52,3 +53,12 @@ docker-compose.override.yml
 # Database
 *.sqlite
 *.db
+
+# Backend
+backend/dist
+backend/node_modules
+
+# Frontend
+frontend/node_modules
+
+

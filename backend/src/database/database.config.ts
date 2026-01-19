@@ -6,8 +6,8 @@ dotenv.config();
 const poolConfig: PoolOptions = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USERNAME || 'gameuser',
-  password: process.env.DB_PASSWORD || 'gamepassword',
+  user: process.env.DB_USERNAME || 'root',
+  password: process.env.DB_PASSWORD || 'root_php',
   database: process.env.DB_DATABASE || 'hypercasual_game',
   connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
   waitForConnections: true,

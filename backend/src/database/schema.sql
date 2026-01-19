@@ -102,18 +102,24 @@ CREATE TABLE IF NOT EXISTS user_activity_logs (
 CREATE TABLE IF NOT EXISTS leaderboards (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    rank INT NOT NULL,
+    player_rank INT NOT NULL,
     points INT NOT NULL,
     level INT NOT NULL,
     leaderboard_type ENUM('global', 'daily', 'weekly', 'monthly') DEFAULT 'global',
     snapshot_date DATE NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_leaderboards_user
+      FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,
+
     INDEX idx_user_id (user_id),
-    INDEX idx_rank (rank),
+    INDEX idx_player_rank (player_rank),
     INDEX idx_leaderboard_type (leaderboard_type),
     INDEX idx_snapshot_date (snapshot_date),
+
     UNIQUE KEY unique_user_leaderboard (user_id, leaderboard_type, snapshot_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- User streaks table
 CREATE TABLE IF NOT EXISTS user_streaks (
