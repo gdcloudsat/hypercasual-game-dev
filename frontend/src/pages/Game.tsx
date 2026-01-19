@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { ColorSort } from '../components/ColorSort';
 import { BubbleShooter } from '../components/BubbleShooter';
@@ -9,6 +9,7 @@ import { adsApi } from '../services/api';
 
 export default function Game() {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     isPlaying,
     currentScore,
@@ -23,10 +24,16 @@ export default function Game() {
   } = useGameStore();
 
   const [selectedDifficulty, setSelectedDifficulty] = useState('easy');
-  const [selectedGameType, setSelectedGameType] = useState('color_sort');
+  const [selectedGameType, setSelectedGameType] = useState(location.state?.gameType || 'color_sort');
   const [showResult, setShowResult] = useState(false);
   const [showAd, setShowAd] = useState(false);
   const [result, setResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (location.state?.gameType) {
+      setSelectedGameType(location.state.gameType);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     return () => {
@@ -43,16 +50,11 @@ export default function Game() {
   };
 
   const onScore = (points: number) => {
-    const newScore = currentScore + points;
-    const level = Math.floor(newScore / 500) + 1;
-
-    updateScore(newScore);
-    if (level > currentLevel) {
-      updateLevel(level);
-    }
+    updateScore(currentScore + points);
   };
 
   const onLevelComplete = async () => {
+    updateLevel(currentLevel + 1);
     setShowAd(true);
   };
 
@@ -241,13 +243,13 @@ export default function Game() {
 
       <div className="game-area">
         {gameType === 'bubble_shooter' && (
-          <BubbleShooter onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} />
+          <BubbleShooter onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} level={currentLevel} />
         )}
         {gameType === 'rolling_ball' && (
-          <RollingBall onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} />
+          <RollingBall onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} level={currentLevel} />
         )}
         {gameType === 'color_sort' && (
-          <ColorSort onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} />
+          <ColorSort onScore={onScore} onLevelComplete={onLevelComplete} difficulty={difficulty} level={currentLevel} />
         )}
       </div>
 

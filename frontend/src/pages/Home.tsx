@@ -38,6 +38,12 @@ export default function Home() {
                 <span>🔢 50+ Levels</span>
                 <span>🎯 Strategy</span>
               </div>
+              <button 
+                className="btn btn-primary btn-small" 
+                onClick={() => navigate('/game', { state: { gameType: 'color_sort' } })}
+              >
+                Play Now
+              </button>
             </div>
 
             <div className="showcase-card bubble-shooter-card">
@@ -48,6 +54,12 @@ export default function Home() {
                 <span>💥 Explosive Action</span>
                 <span>🎨 Color Matching</span>
               </div>
+              <button 
+                className="btn btn-primary btn-small" 
+                onClick={() => navigate('/game', { state: { gameType: 'bubble_shooter' } })}
+              >
+                Play Now
+              </button>
             </div>
 
             <div className="showcase-card rolling-ball-card">
@@ -58,6 +70,12 @@ export default function Home() {
                 <span>⚡ Fast-paced</span>
                 <span>🎮 Platformer</span>
               </div>
+              <button 
+                className="btn btn-primary btn-small" 
+                onClick={() => navigate('/game', { state: { gameType: 'rolling_ball' } })}
+              >
+                Play Now
+              </button>
             </div>
           </div>
 
