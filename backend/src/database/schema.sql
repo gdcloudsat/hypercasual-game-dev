@@ -209,3 +209,14 @@ INSERT INTO achievements (name, description, requirement_type, requirement_value
 ('Dedication', 'Play 7 days in a row', 'streak_days', 7, 1000, 500),
 ('Champion', 'Reach top 10 on leaderboard', 'leaderboard_rank', 10, 2000, 1000),
 ('Marathon', 'Play 100 games', 'games_played', 100, 3000, 1500);
+
+-- Insert default admin user (password: admin123)
+INSERT INTO users (username, email, password_hash, is_guest, is_admin)
+VALUES ('admin', 'admin@example.com', '$2b$10$2bDGadCe6KwAxF1FgIYwlOEZco9CRYxU882IWh1y5Zo5TdE2f7svS', FALSE, TRUE);
+
+-- Set level and streak for admin
+INSERT INTO user_levels (user_id, current_level, stars_earned, total_xp)
+SELECT id, 1, 0, 0 FROM users WHERE username = 'admin';
+
+INSERT INTO user_streaks (user_id, current_streak, longest_streak)
+SELECT id, 0, 0 FROM users WHERE username = 'admin';
